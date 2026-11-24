@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1024">
+  <title>Teclado Musical</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">&#9834;</div>
+        <div>
+          <h1>Teclado Musical</h1>
+          <p>Sintetizador, acordes, arpejador e sequenciador no navegador</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="status-badge" id="audioStatus">Clique em uma nota para iniciar o áudio</span>
+        <select id="themeSelect" aria-label="Tema visual">
+          <option value="default">Tema azul</option>
+          <option value="violet">Tema violeta</option>
+          <option value="green">Tema verde</option>
+        </select>
+        <button class="btn ghost" id="helpBtn" type="button">Ajuda</button>
+        <button class="btn ghost" id="fullscreenBtn" type="button">Tela cheia</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="panel controls">
+        <section class="card">
+          <h2>Instrumento</h2>
+          <div class="preset-grid" id="presetGrid"></div>
+        </section>
+
+        <section class="card">
+          <h2>Dois instrumentos</h2>
+          <div class="mode-buttons">
+            <button class="mode-btn active" data-mode="single" type="button">Simples</button>
+            <button class="mode-btn" data-mode="split" type="button">Split</button>
+            <button class="mode-btn" data-mode="layer" type="button">Camadas</button>
+          </div>
+          <div class="part-tabs">
+            <button class="part-tab active" data-part="A" type="button">A · <span id="partAName">Piano</span></button>
+            <button class="part-tab" data-part="B" type="button">B · <span id="partBName">Guitarra elétrica</span></button>
+          </div>
+          <div class="inline-form">
+            <label class="check"><input type="checkbox" id="muteA"> Silenciar A</label>
+            <label class="check"><input type="checkbox" id="muteB"> Silenciar B</label>
+          </div>
+          <div class="control" id="splitControl" hidden>
+            <label for="splitNote">A toca até <b id="splitNoteLabel">C4</b>; B toca acima</label>
+            <input type="range" id="splitNote" min="24" max="96" step="1">
+            <button class="btn small ghost full" id="setSplitFromLast" type="button">Usar última nota como divisão</button>
+          </div>
+          <p class="hint" id="routingHint">Escolha um instrumento para a parte ativa. Em Camadas as duas tocam juntas; em Split a mão esquerda e a direita usam instrumentos diferentes.</p>
+        </section>
+
+        <section class="card">
+          <h2>Síntese</h2>
+          <div class="control">
+            <label for="waveform">Forma de onda</label>
+            <select id="waveform" data-setting="waveform">
+              <option value="sine">Seno</option>
+              <option value="triangle">Triângulo</option>
+              <option value="sawtooth">Serra</option>
+              <option value="square">Quadrada</option>
+            </select>
+          </div>
+          <div class="slider"><div class="slider-head"><label for="volume">Volume geral</label><output data-output="volume"></output></div><input type="range" id="volume" data-setting="volume" min="0" max="1" step="0.01"></div>
+          <div class="slider"><div class="slider-head"><label for="voices">Osciladores por nota</label><output data-output="voices"></output></div><input type="range" id="voices" data-setting="voices" min="1" max="4" step="1"></div>
+          <div class="slider"><div class="slider-head"><label for="detune">Detune</label><output data-output="detune"></output></div><input type="range" id="detune" data-setting="detune" min="0" max="30" step="1"></div>
+          <div class="slider"><div class="slider-head"><label for="cutoff">Filtro (cutoff)</label><output data-output="cutoff"></output></div><input type="range" id="cutoff" data-setting="cutoff" min="100" max="12000" step="10"></div>
+          <div class="slider"><div class="slider-head"><label for="resonance">Ressonância</label><output data-output="resonance"></output></div><input type="range" id="resonance" data-setting="resonance" min="0.1" max="12" step="0.1"></div>
+          <div class="slider"><div class="slider-head"><label for="brightness">Brilho da palheta / corda</label><output data-output="brightness"></output></div><input type="range" id="brightness" data-setting="brightness" min="0.05" max="1" step="0.01"></div>
+          <div class="slider"><div class="slider-head"><label for="damping">Duração da corda</label><output data-output="damping"></output></div><input type="range" id="damping" data-setting="damping" min="0.95" max="0.9995" step="0.0005"></div>
+          <div class="slider"><div class="slider-head"><label for="distortion">Distorção (guitarra)</label><output data-output="distortion"></output></div><input type="range" id="distortion" data-setting="distortion" min="0" max="1" step="0.01"></div>
+          <div class="slider"><div class="slider-head"><label for="vibratoRate">Vibrato velocidade</label><output data-output="vibratoRate"></output></div><input type="range" id="vibratoRate" data-setting="vibratoRate" min="0.5" max="12" step="0.1"></div>
+          <div class="slider"><div class="slider-head"><label for="vibratoDepth">Vibrato intensidade</label><output data-output="vibratoDepth"></output></div><input type="range" id="vibratoDepth" data-setting="vibratoDepth" min="0" max="50" step="1"></div>
+        </section>
+
+        <section class="card">
+          <h2>Envelope ADSR</h2>
+          <div class="slider"><div class="slider-head"><label for="attack">Ataque</label><output data-output="attack"></output></div><input type="range" id="attack" data-setting="attack" min="0.001" max="1.5" step="0.001"></div>
+          <div class="slider"><div class="slider-head"><label for="decay">Decay</label><output data-output="decay"></output></div><input type="range" id="decay" data-setting="decay" min="0.01" max="2" step="0.01"></div>
+          <div class="slider"><div class="slider-head"><label for="sustain">Sustain</label><output data-output="sustain"></output></div><input type="range" id="sustain" data-setting="sustain" min="0" max="1" step="0.01"></div>
+          <div class="slider"><div class="slider-head"><label for="release">Release</label><output data-output="release"></output></div><input type="range" id="release" data-setting="release" min="0.02" max="3" step="0.01"></div>
+        </section>
+
+        <section class="card">
+          <h2>Efeitos</h2>
+          <div class="slider"><div class="slider-head"><label for="reverb">Reverb</label><output data-output="reverb"></output></div><input type="range" id="reverb" data-setting="reverb" min="0" max="1" step="0.01"></div>
+          <div class="slider"><div class="slider-head"><label for="delayTime">Delay tempo</label><output data-output="delayTime"></output></div><input type="range" id="delayTime" data-setting="delayTime" min="0.02" max="1" step="0.01"></div>
+          <div class="slider"><div class="slider-head"><label for="delayFeedback">Delay feedback</label><output data-output="delayFeedback"></output></div><input type="range" id="delayFeedback" data-setting="delayFeedback" min="0" max="0.8" step="0.01"></div>
+          <div class="slider"><div class="slider-head"><label for="delayMix">Delay mix</label><output data-output="delayMix"></output></div><input type="range" id="delayMix" data-setting="delayMix" min="0" max="0.8" step="0.01"></div>
+        </section>
+
+        <section class="card">
+          <h2>Afinação e tempo</h2>
+          <div class="slider"><div class="slider-head"><label for="tuning">A4 (Hz)</label><output data-output="tuning"></output></div><input type="range" id="tuning" data-setting="tuning" min="415" max="480" step="1"></div>
+          <div class="slider"><div class="slider-head"><label for="transposeCtrl">Transpose (semitons)</label><output data-output="transpose"></output></div><input type="range" id="transposeCtrl" data-setting="transpose" min="-12" max="12" step="1"></div>
+          <div class="slider"><div class="slider-head"><label for="octaveCtrl">Oitava do som</label><output data-output="octaveShift"></output></div><input type="range" id="octaveCtrl" data-setting="octaveShift" min="-2" max="2" step="1"></div>
+          <div class="slider"><div class="slider-head"><label for="bpm">BPM</label><output data-output="bpm"></output></div><input type="range" id="bpm" data-setting="bpm" min="60" max="200" step="1"></div>
+          <div class="control">
+            <label for="arpRate">Divisão do arpejador</label>
+            <select id="arpRate" data-setting="arpRate">
+              <option value="4">1/4</option>
+              <option value="8">1/8</option>
+              <option value="16">1/16</option>
+              <option value="32">1/32</option>
+            </select>
+          </div>
+          <div class="control">
+            <label for="arpPattern">Padrão do arpejador</label>
+            <select id="arpPattern" data-setting="arpPattern">
+              <option value="up">Crescente</option>
+              <option value="down">Decrescente</option>
+              <option value="updown">Ida e volta</option>
+              <option value="random">Aleatório</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Meus presets</h2>
+          <div class="inline-form">
+            <input id="presetName" type="text" maxlength="32" placeholder="Nome do preset">
+            <button class="btn small" id="savePreset" type="button">Salvar</button>
+          </div>
+          <div class="inline-form">
+            <select id="userPresetSelect" aria-label="Presets salvos"></select>
+            <button class="btn small" id="loadPreset" type="button">Carregar</button>
+            <button class="btn small danger" id="deletePreset" type="button">Excluir</button>
+          </div>
+          <div class="transport secondary">
+            <button class="btn small ghost" id="exportConfig" type="button">Exportar config.</button>
+            <button class="btn small ghost" id="importConfig" type="button">Importar config.</button>
+            <input type="file" id="configFile" accept="application/json,.json" hidden>
+          </div>
+          <button class="btn small ghost full" id="resetSettings" type="button">Restaurar configuração inicial</button>
+        </section>
+      </aside>
+
+      <section class="stage">
+        <div class="card display-card">
+          <div class="display-info">
+            <span class="display-label">Nota / acorde</span>
+            <strong id="noteDisplay">&mdash;</strong>
+            <span class="display-sub" id="freqDisplay">Toque para começar</span>
+            <div class="level-meter" aria-hidden="true"><span id="levelFill"></span></div>
+          </div>
+          <div class="toggle-group">
+            <span class="status-mini" id="bandStatus">Banda off</span>
+            <button class="chip" id="sustainBtn" type="button" aria-pressed="false">Sustain</button>
+            <button class="chip" id="chordBtn" type="button" aria-pressed="false">Acordes</button>
+            <button class="chip" id="metroBtn" type="button" aria-pressed="false">Metrônomo</button>
+            <button class="chip" id="arpBtn" type="button" aria-pressed="false">Arpejador</button>
+          </div>
+        </div>
+
+        <div class="card visual-card">
+          <div class="card-head">
+            <h2>Visualizador</h2>
+            <select id="vizMode" aria-label="Modo do visualizador">
+              <option value="both">Onda + espectro</option>
+              <option value="wave">Onda</option>
+              <option value="spectrum">Espectro</option>
+            </select>
+          </div>
+          <canvas id="visualizer"></canvas>
+        </div>
+
+        <div class="card keyboard-card">
+          <div class="keyboard-toolbar">
+            <div class="stepper">
+              <button id="octaveDown" type="button" aria-label="Diminuir oitava">&minus;</button>
+              <span>Oitava <b id="octaveLabel">3</b></span>
+              <button id="octaveUp" type="button" aria-label="Aumentar oitava">+</button>
+            </div>
+            <div class="stepper">
+              <button id="rangeDown" type="button" aria-label="Diminuir extensão">&minus;</button>
+              <span>Extensão <b id="rangeLabel">4</b></span>
+              <button id="rangeUp" type="button" aria-label="Aumentar extensão">+</button>
+            </div>
+            <div class="stepper">
+              <button id="transposeDown" type="button" aria-label="Transpor abaixo">&minus;</button>
+              <span>Transpose <b id="transposeLabel">0</b></span>
+              <button id="transposeUp" type="button" aria-label="Transpor acima">+</button>
+            </div>
+          </div>
+          <div class="keyboard-wrap"><div class="keyboard" id="keyboard"></div></div>
+          <p class="hint keyboard-hint">Mouse/toque para glissando &middot; teclado: <kbd>Z</kbd><kbd>S</kbd><kbd>X</kbd><kbd>D</kbd><kbd>C</kbd> &middot; segunda oitava: <kbd>Q</kbd><kbd>2</kbd><kbd>W</kbd><kbd>3</kbd><kbd>E</kbd> &middot; <kbd>Espaço</kbd> sustain</p>
+        </div>
+
+        <div class="card music-card">
+          <div class="music-grid">
+            <div>
+              <h2>Escalas</h2>
+              <div class="inline-form stacked">
+                <select id="scaleSelect" aria-label="Escala"></select>
+                <select id="scaleRoot" aria-label="Nota inicial da escala"></select>
+              </div>
+              <p class="hint">As notas da escala ficam destacadas no teclado.</p>
+            </div>
+            <div>
+              <h2>Acordes</h2>
+              <select id="chordSelect" aria-label="Tipo de acorde"></select>
+              <p class="hint" id="chordInfo">Ative "Acordes" e toque uma nota.</p>
+            </div>
+            <div>
+              <h2>Arpejador</h2>
+              <div class="inline-form">
+                <button class="btn small" id="arpClear" type="button">Limpar notas</button>
+                <label class="check"><input type="checkbox" id="arpLatch"> Manter</label>
+              </div>
+              <p class="hint" id="arpInfo">0 notas</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel transport-panel">
+        <section class="card">
+          <h2>Sequenciador</h2>
+          <div class="transport">
+            <button class="btn rec" id="recBtn" type="button">Gravar</button>
+            <button class="btn play" id="playBtn" type="button">Tocar</button>
+            <button class="btn" id="stopBtn" type="button">Parar</button>
+          </div>
+          <div class="transport secondary">
+            <button class="btn small" id="loopBtn" type="button">Loop: off</button>
+            <button class="btn small" id="quantizeBtn" type="button">Quantizar</button>
+            <button class="btn small" id="undoBtn" type="button">Desfazer</button>
+            <button class="btn small" id="clearBtn" type="button">Limpar</button>
+          </div>
+          <div class="pianoroll-wrap"><canvas id="pianoRoll"></canvas></div>
+          <div class="transport secondary">
+            <button class="btn small ghost" id="exportSeq" type="button">Exportar JSON</button>
+            <button class="btn small ghost" id="exportMidi" type="button">Exportar MIDI</button>
+            <button class="btn small ghost" id="wavRecBtn" type="button">Gravar áudio</button>
+            <button class="btn small ghost" id="importSeq" type="button">Importar JSON</button>
+            <input type="file" id="seqFile" accept="application/json,.json" hidden>
+          </div>
+          <p class="hint" id="seqInfo">0 eventos &middot; 0,0 s</p>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Bateria + guitarra</h2><span class="status-badge" id="rhythmBadge">Parada</span></div>
+          <div class="inline-form stacked">
+            <select id="rhythmStyle" aria-label="Estilo de ritmo"></select>
+            <select id="rhythmProgression" aria-label="Progressão de acordes"></select>
+            <select id="rhythmKey" aria-label="Tom da harmonia"></select>
+          </div>
+          <div class="slider"><div class="slider-head"><label for="drumVolume">Volume da bateria</label><output data-rhythm-output="drumVolume"></output></div><input type="range" id="drumVolume" data-rhythm-setting="drumVolume" min="0" max="1" step="0.01"></div>
+          <div class="slider"><div class="slider-head"><label for="guitarVolume">Volume da guitarra</label><output data-rhythm-output="guitarVolume"></output></div><input type="range" id="guitarVolume" data-rhythm-setting="guitarVolume" min="0" max="1" step="0.01"></div>
+          <div class="slider"><div class="slider-head"><label for="swing">Swing</label><output data-rhythm-output="swing"></output></div><input type="range" id="swing" data-rhythm-setting="swing" min="0" max="0.7" step="0.01"></div>
+          <div class="transport">
+            <button class="btn" id="rhythmToggle" type="button">Iniciar banda</button>
+            <button class="btn ghost" id="rhythmFill" type="button">Fill</button>
+          </div>
+          <p class="hint" id="rhythmInfo"></p>
+          <div class="drum-pads" id="drumPads"></div>
+          <div class="pattern-grid" id="patternGrid"></div>
+          <p class="hint">Pads: mouse ou <kbd>Shift</kbd>+<kbd>1</kbd> a <kbd>Shift</kbd>+<kbd>6</kbd>; <kbd>Alt</kbd>+<kbd>R</kbd> liga/desliga a banda; <kbd>Alt</kbd>+<kbd>F</kbd> faz um fill. A guitarra da parte B é ajustada sozinha: elétrica para rock/gospel, violão para balada.</p>
+        </section>
+
+        <section class="card">
+          <h2>MIDI externo</h2>
+          <p class="hint">Conecte um teclado MIDI via Web MIDI (Chrome/Edge).</p>
+          <select id="midiDevices" aria-label="Dispositivos MIDI"><option>Nenhum dispositivo</option></select>
+          <button class="btn small ghost full" id="midiEnable" type="button">Ativar MIDI</button>
+          <p class="hint" id="midiStatus">MIDI não ativado.</p>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="helpDialog" class="dialog">
+    <div class="dialog-head">
+      <h2>Como usar</h2>
+      <button class="btn ghost" id="closeHelp" type="button">Fechar</button>
+    </div>
+    <div class="dialog-body">
+      <h3>Tocando</h3>
+      <p>Clique ou arraste sobre as teclas para glissando. No teclado do computador use <kbd>Z</kbd> <kbd>S</kbd> <kbd>X</kbd> <kbd>D</kbd> <kbd>C</kbd> <kbd>V</kbd> <kbd>G</kbd> <kbd>B</kbd> <kbd>H</kbd> <kbd>N</kbd> <kbd>J</kbd> <kbd>M</kbd> para a primeira oitava e <kbd>Q</kbd> <kbd>2</kbd> <kbd>W</kbd> <kbd>3</kbd> <kbd>E</kbd> <kbd>R</kbd> <kbd>5</kbd> <kbd>T</kbd> <kbd>6</kbd> <kbd>Y</kbd> <kbd>7</kbd> <kbd>U</kbd> para a segunda. Segure <kbd>Espaço</kbd> para sustain.</p>
+      <h3>Som</h3>
+      <p>Escolha um instrumento, ajuste forma de onda, envelope ADSR, filtro, reverb e delay. O botão "Meus presets" salva a configuração no navegador.</p>
+      <h3>Dois instrumentos</h3>
+      <p>Use "Simples" para um timbre, "Camadas" para piano e guitarra (ou qualquer par) soando juntos, e "Split" para tocar o instrumento A até a nota de divisão e o B acima dela. Selecione A ou B e escolha o instrumento na lista; cada parte tem seus próprios efeitos e pode ser silenciada.</p>
+      <h3>Guitarra e cordas</h3>
+      <p>Guitarra elétrica, violão, harpa e banjo usam síntese de corda (Karplus-Strong), com palheta, amortecimento e distorção ajustáveis. Violino, flauta, sax e trompete têm vibrato próprio.</p>
+      <h3>Bateria + guitarra</h3>
+      <p>O painel “Bateria + guitarra” tem 12 estilos: Rock, Gospel, Pop, Metal, Funk, Balada, Reggae, Sertanejo, Pagode, Blues, Jazz e Techno. Clique em “Iniciar banda” para ouvir bateria sintetizada e a guitarra tocando acordes do tom/progressão escolhidos enquanto você toca a melodia. Use <kbd>Alt</kbd>+<kbd>R</kbd> para ligar/desligar, <kbd>Alt</kbd>+<kbd>F</kbd> para um fill, e os pads com <kbd>Shift</kbd>+<kbd>1</kbd> a <kbd>Shift</kbd>+<kbd>6</kbd>. O volume geral e o BPM valem também para a banda.</p>
+      <h3>Acordes e escalas</h3>
+      <p>Ative "Acordes" e toque uma nota para ouvir o acorde selecionado. Escolha uma escala para destacar as notas correspondentes no teclado.</p>
+      <h3>Arpejador e metrônomo</h3>
+      <p>Ative o arpejador e segure algumas notas; elas serão repetidas no padrão e na divisão escolhidas. "Manter" fixa as notas mesmo após soltar. O metrônomo segue o BPM.</p>
+      <h3>Sequenciador</h3>
+      <p>Use "Gravar", toque algumas notas e "Parar". "Tocar" reproduz, "Loop" repete e "Quantizar" alinha ao BPM. "Exportar JSON" salva a sequência junto com a banda e o tema; "Exportar MIDI" gera um arquivo .mid; "Gravar áudio" captura tudo o que você ouve em WAV (ou WebM em navegadores sem captura PCM). "Exportar config." / "Importar config." salva ou restaura timbres, presets e ritmo.</p>
+      <h3>MIDI</h3>
+      <p>Em navegadores compatíveis, clique em "Ativar MIDI", permita o acesso e selecione seu teclado. O pedal de sustain (CC64) também funciona.</p>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
