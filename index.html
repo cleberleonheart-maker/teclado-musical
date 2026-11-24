@@ -240,9 +240,11 @@
           <div class="transport secondary">
             <button class="btn small ghost" id="exportSeq" type="button">Exportar JSON</button>
             <button class="btn small ghost" id="exportMidi" type="button">Exportar MIDI</button>
+            <button class="btn small ghost" id="importMidi" type="button">Importar MIDI</button>
             <button class="btn small ghost" id="wavRecBtn" type="button">Gravar áudio</button>
             <button class="btn small ghost" id="importSeq" type="button">Importar JSON</button>
             <input type="file" id="seqFile" accept="application/json,.json" hidden>
+            <input type="file" id="midiFile" accept="audio/midi,.mid,.midi" hidden>
           </div>
           <p class="hint" id="seqInfo">0 eventos &middot; 0,0 s</p>
         </section>
@@ -253,6 +255,11 @@
             <select id="rhythmStyle" aria-label="Estilo de ritmo"></select>
             <select id="rhythmProgression" aria-label="Progressão de acordes"></select>
             <select id="rhythmKey" aria-label="Tom da harmonia"></select>
+            <select id="rhythmChordSource" data-rhythm-setting="chordSource" aria-label="Origem da harmonia">
+              <option value="progression">Harmonia: progressão fixa</option>
+              <option value="played">Harmonia: nota/acorde tocado</option>
+            </select>
+            <label class="check"><input type="checkbox" id="autoFill" data-rhythm-setting="autoFill"> Fill automático a cada 4 compassos</label>
           </div>
           <div class="slider"><div class="slider-head"><label for="drumVolume">Volume da bateria</label><output data-rhythm-output="drumVolume"></output></div><input type="range" id="drumVolume" data-rhythm-setting="drumVolume" min="0" max="1" step="0.01"></div>
           <div class="slider"><div class="slider-head"><label for="guitarVolume">Volume da guitarra</label><output data-rhythm-output="guitarVolume"></output></div><input type="range" id="guitarVolume" data-rhythm-setting="guitarVolume" min="0" max="1" step="0.01"></div>
@@ -293,13 +300,15 @@
       <h3>Guitarra e cordas</h3>
       <p>Guitarra elétrica, violão, harpa e banjo usam síntese de corda (Karplus-Strong), com palheta, amortecimento e distorção ajustáveis. Violino, flauta, sax e trompete têm vibrato próprio.</p>
       <h3>Bateria + guitarra</h3>
-      <p>O painel “Bateria + guitarra” tem 12 estilos: Rock, Gospel, Pop, Metal, Funk, Balada, Reggae, Sertanejo, Pagode, Blues, Jazz e Techno. Clique em “Iniciar banda” para ouvir bateria sintetizada e a guitarra tocando acordes do tom/progressão escolhidos enquanto você toca a melodia. Use <kbd>Alt</kbd>+<kbd>R</kbd> para ligar/desligar, <kbd>Alt</kbd>+<kbd>F</kbd> para um fill, e os pads com <kbd>Shift</kbd>+<kbd>1</kbd> a <kbd>Shift</kbd>+<kbd>6</kbd>. O volume geral e o BPM valem também para a banda.</p>
+      <p>O painel “Bateria + guitarra” tem 12 estilos: Rock, Gospel, Pop, Metal, Funk, Balada, Reggae, Sertanejo, Pagode, Blues, Jazz e Techno. Clique em “Iniciar banda” para ouvir bateria sintetizada e a guitarra tocando acordes do tom/progressão escolhidos enquanto você toca a melodia. Use <kbd>Alt</kbd>+<kbd>R</kbd> para ligar/desligar, <kbd>Alt</kbd>+<kbd>F</kbd> para um fill, e os pads com <kbd>Shift</kbd>+<kbd>1</kbd> a <kbd>Shift</kbd>+<kbd>6</kbd>. Em “Harmonia: nota/acorde tocado”, a guitarra acompanha o acorde escolhido no painel Acordes e a última nota que você tocar. O fill automático entra a cada 4 compassos; o volume geral e o BPM valem também para a banda.</p>
       <h3>Acordes e escalas</h3>
       <p>Ative "Acordes" e toque uma nota para ouvir o acorde selecionado. Escolha uma escala para destacar as notas correspondentes no teclado.</p>
       <h3>Arpejador e metrônomo</h3>
       <p>Ative o arpejador e segure algumas notas; elas serão repetidas no padrão e na divisão escolhidas. "Manter" fixa as notas mesmo após soltar. O metrônomo segue o BPM.</p>
       <h3>Sequenciador</h3>
-      <p>Use "Gravar", toque algumas notas e "Parar". "Tocar" reproduz, "Loop" repete e "Quantizar" alinha ao BPM. "Exportar JSON" salva a sequência junto com a banda e o tema; "Exportar MIDI" gera um arquivo .mid; "Gravar áudio" captura tudo o que você ouve em WAV (ou WebM em navegadores sem captura PCM). "Exportar config." / "Importar config." salva ou restaura timbres, presets e ritmo.</p>
+      <p>Use "Gravar", toque algumas notas e "Parar". "Tocar" reproduz, "Loop" repete e "Quantizar" alinha ao BPM. "Exportar JSON" salva a sequência junto com a banda e o tema; "Exportar MIDI" gera um arquivo .mid e "Importar MIDI" lê arquivos .mid/.midi; "Gravar áudio" captura tudo o que você ouve em WAV (ou WebM em navegadores sem captura PCM). "Exportar config." / "Importar config." salva ou restaura timbres, presets e ritmo.</p>
+      <h3>Atalhos</h3>
+      <p><kbd>Espaço</kbd> sustain · <kbd>Shift</kbd>+<kbd>1..6</kbd> pads de bateria · <kbd>Alt</kbd>+<kbd>R</kbd> liga/desliga a banda · <kbd>Alt</kbd>+<kbd>F</kbd> fill · <kbd>Z</kbd><kbd>S</kbd><kbd>X</kbd><kbd>D</kbd><kbd>C</kbd> e <kbd>Q</kbd><kbd>2</kbd><kbd>W</kbd><kbd>3</kbd><kbd>E</kbd> tocam as notas.</p>
       <h3>MIDI</h3>
       <p>Em navegadores compatíveis, clique em "Ativar MIDI", permita o acesso e selecione seu teclado. O pedal de sustain (CC64) também funciona.</p>
     </div>

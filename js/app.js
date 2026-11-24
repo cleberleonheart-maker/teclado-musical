@@ -6,7 +6,7 @@ import { PianoRoll } from './pianoroll.js';
 import { MidiInput } from './midi.js';
 import { RhythmSection, RHYTHM_STYLES, PROGRESSIONS, DRUM_PADS, chordForProgression } from './rhythm.js';
 import { AudioRecorder } from './recorder.js';
-import { midiBlob } from './export.js';
+import { midiBlob, parseMidi } from './export.js';
 import { CHORDS, NOTE_NAMES, SCALES, buildChord, chordLabel, clamp, midiToFreq, midiToName } from './notes.js';
 
 const $ = (id) => document.getElementById(id);
@@ -80,6 +80,14 @@ const rhythm = new RhythmSection(engine, {
   },
   onPad(id) {
     flashDrumPad(id);
+  },
+  getLiveChord() {
+    const type = $('chordSelect').value;
+    const root = lastPlayedNote;
+    return {
+      notes: buildChord(root, type),
+      label: chordLabel(engine.getPlayedMidi(root), type)
+    };
   }
 });
 
@@ -427,6 +435,8 @@ function updateRhythmUI() {
   $('rhythmStyle').value = settings.style;
   $('rhythmProgression').value = settings.progression;
   $('rhythmKey').value = String(settings.key);
+  $('rhythmChordSource').value = settings.chordSource;
+  $('autoFill').checked = settings.autoFill;
   $('drumVolume').value = String(settings.drumVolume);
   $('guitarVolume').value = String(settings.guitarVolume);
   $('swing').value = String(settings.swing);
@@ -439,8 +449,13 @@ function updateRhythmUI() {
   $('rhythmBadge').classList.toggle('live', rhythm.playing);
   $('bandStatus').textContent = rhythm.playing ? 'Banda on' : 'Banda off';
   $('bandStatus').classList.toggle('live', rhythm.playing);
-  const chord = chordForProgression(settings.progression, settings.key, Math.max(0, rhythm.chordIndex));
-  $('rhythmInfo').textContent = `${RHYTHM_STYLES[settings.style].label} · ${PROGRESSIONS[settings.progression].label} · tom ${NOTE_NAMES[settings.key]} · acorde ${chord.label}`;
+  const chord = settings.chordSource === 'played'
+    ? { label: `${CHORDS[$('chordSelect').value].label} em ${midiToName(lastPlayedNote)}` }
+    : chordForProgression(settings.progression, settings.key, Math.max(0, rhythm.chordIndex));
+  const harmony = settings.chordSource === 'played'
+    ? `acorde tocado · ${chord.label}`
+    : `${PROGRESSIONS[settings.progression].label} · tom ${NOTE_NAMES[settings.key]} · acorde ${chord.label}`;
+  $('rhythmInfo').textContent = `${RHYTHM_STYLES[settings.style].label} · ${harmony}`;
   renderPattern();
 }
 
@@ -595,7 +610,10 @@ function bindRhythm() {
   for (const element of document.querySelectorAll('[data-rhythm-setting]')) {
     const key = element.dataset.rhythmSetting;
     const handler = () => {
-      rhythm.setSetting(key, element.type === 'range' ? Number(element.value) : element.value);
+      const value = element.type === 'range'
+        ? Number(element.value)
+        : element.type === 'checkbox' ? element.checked : element.value;
+      rhythm.setSetting(key, value);
     };
     element.addEventListener(element.type === 'range' ? 'input' : 'change', handler);
   }
@@ -700,6 +718,23 @@ function bindExportTools() {
     }
     downloadBlob(midiBlob(sequencer.events, engine.settings.bpm), 'sequencia-teclado.mid');
     toast('MIDI exportado');
+  });
+
+  $('importMidi').addEventListener('click', () => $('midiFile').click());
+  $('midiFile').addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const midiData = parseMidi(await file.arrayBuffer());
+      if (!midiData.events.length) throw new Error('Sem notas');
+      sequencer.import(JSON.stringify({ bpm: midiData.bpm, events: midiData.events }));
+      engine.updateSetting('bpm', midiData.bpm);
+      updateTransport();
+      toast(`${midiData.events.length} notas importadas do MIDI`);
+    } catch {
+      toast('Não foi possível importar o MIDI');
+    }
+    event.target.value = '';
   });
 
   $('wavRecBtn').addEventListener('click', async () => {

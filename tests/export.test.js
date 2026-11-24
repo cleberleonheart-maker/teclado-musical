@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildMidi } from '../js/export.js';
+import { buildMidi, parseMidi } from '../js/export.js';
 
 test('MIDI gerado tem cabeçalho e notas válidas', () => {
   const bytes = buildMidi([
@@ -16,6 +16,17 @@ test('MIDI gerado tem cabeçalho e notas válidas', () => {
   assert.ok(bytes.includes(0x80));
   assert.equal(bytes[bytes.length - 3], 0xff);
   assert.equal(bytes[bytes.length - 2], 0x2f);
+});
+
+test('MIDI exportado pode ser importado', () => {
+  const bytes = buildMidi([
+    { note: 60, time: 0, duration: 0.5, velocity: 0.8 },
+    { note: 64, time: 0.5, duration: 0.25, velocity: 0.7 }
+  ], 120);
+  const parsed = parseMidi(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+  assert.equal(parsed.bpm, 120);
+  assert.deepEqual(parsed.events.map((event) => event.note), [60, 64]);
+  assert.ok(parsed.events[0].duration > 0.45);
 });
 
 test('MIDI lida com sequência vazia', () => {

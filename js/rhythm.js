@@ -169,7 +169,9 @@ const RHYTHM_DEFAULTS = {
   key: 0,
   swing: 0,
   drumVolume: 0.75,
-  guitarVolume: 0.8
+  guitarVolume: 0.8,
+  chordSource: 'progression',
+  autoFill: true
 };
 
 export function chordForProgression(progressionKey, keyPc, chordIndex = 0) {
@@ -233,6 +235,8 @@ export class RhythmSection {
     next.swing = clamp(Number(next.swing) || 0, 0, 0.7);
     next.drumVolume = clamp(Number(next.drumVolume ?? RHYTHM_DEFAULTS.drumVolume), 0, 1);
     next.guitarVolume = clamp(Number(next.guitarVolume ?? RHYTHM_DEFAULTS.guitarVolume), 0, 1);
+    next.chordSource = next.chordSource === 'played' ? 'played' : 'progression';
+    next.autoFill = next.autoFill !== false;
     this.settings = next;
     this.applyVolumes();
     this.callbacks.onSettingsChange?.(this.settings);
@@ -314,19 +318,28 @@ export class RhythmSection {
     }
   }
 
-  async triggerFill() {
-    await this.ensure();
+  queueFill(start = null) {
+    if (!this.ready) return;
     const stepDuration = 60 / clamp(this.engine.settings.bpm, 60, 200) / 4;
-    const start = Math.max(this.ctx.currentTime + 0.05, this.nextTime);
+    const when = start ?? Math.max(this.ctx.currentTime + 0.05, this.nextTime);
     for (let index = 0; index < 8; index += 1) {
       const drum = index < 4 ? 'snare' : 'tom';
-      this.playDrum(drum, start + index * 2 * stepDuration, 0.5 + index * 0.055);
+      this.playDrum(drum, when + index * 2 * stepDuration, 0.5 + index * 0.055);
     }
-    this.playDrum('crash', start, 0.7);
+    this.playDrum('crash', when, 0.7);
     this.callbacks.onFill?.();
   }
 
+  async triggerFill() {
+    await this.ensure();
+    this.queueFill();
+  }
+
   currentChord() {
+    if (this.settings.chordSource === 'played') {
+      const live = this.callbacks.getLiveChord?.();
+      if (live?.notes?.length) return live;
+    }
     return chordForProgression(this.settings.progression, this.settings.key, Math.max(0, this.chordIndex));
   }
 
@@ -366,6 +379,9 @@ export class RhythmSection {
     }
     if (step === 0 && this.bar % 4 === 0 && style.crash?.[0] > 0) {
       this.playDrum('crash', time, style.crash[0]);
+    }
+    if (step === 0 && this.bar > 0 && this.bar % 4 === 0 && this.settings.autoFill) {
+      this.queueFill(time);
     }
     const strum = style.strum?.[step] || 0;
     if (strum > 0) {
